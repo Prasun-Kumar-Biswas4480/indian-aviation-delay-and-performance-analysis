@@ -1,0 +1,102 @@
+INDIAN DOMESTIC AVIATION DELAY AND PERFORMANCE ANALYSIS (2018–PRESENT)
+University Student Project Execution Summary & Development Diary
+
+========================================================================================
+PROJECT & STUDENT TEAM DETAILS
+========================================================================================
+Project Name: Indian Domestic Aviation Delay and Performance Analysis (2018–Present)
+Student Researchers: Prasun Kumar Biswas, Ipsita Priyadarshini, Omm Shree Hota
+Faculty Guide: Dr. Amit Kumar Sahoo
+Institution: Centurion University of Technology and Management
+Department: Computer Science & Data Engineering
+
+========================================================================================
+OUR STEP-BY-STEP DEVELOPMENT JOURNEY
+========================================================================================
+
+STEP 1: FINDING & AUDITING OUR DATA
+- We searched through our workspace for aviation data and identified:
+  1. Over 1,300 government Excel files published by India's DGCA in 'yearly statistics/' and 'monthly statistics/':
+     • Table 1 Series (1.01–1.08): Individual airline operational reports.
+     • Table 2 Series (2.01–2.08): National totals combining All Scheduled Indian Airlines.
+     • Table 3 Series (3.01–3.08): Private sector totals combining All Private Airlines.
+     • Table 4.01: Official annual domestic passenger market share filings.
+     • Table 5.01: 835 city-to-city route records.
+     • Forms D & EF / Forms 1A–1G: Corporate financial and fleet returns.
+  2. Two large flight booking datasets: 'economy.csv' (217,054 rows) and 'business.csv' (98,220 rows), giving over 315,000 real flight records showing dates, routes, flight numbers, and ticket prices in Rupees.
+  3. Ministry of Civil Aviation (MoCA) Daily Operational Reports ('india-aviation-traffic-main/aggregated/daily.csv'): 1,299 daily snapshot records covering official carrier On-Time Performance (OTP %) and AirSewa passenger complaints from 2020 through 2026.
+
+STEP 2: FILTERING OUT UNWANTED DATA
+- We wrote rules to keep our data clean:
+  • Filtered out dedicated cargo airlines (Blue Dart Aviation and Quikjet) so freight operations don't distort passenger load factors.
+  • Removed government VIP helicopters and private charters (Table 6 series) because they don't operate on regular commercial flight schedules.
+  • Fixed messy airline names in the raw tables (converting 'AIR_INDIA' to 'Air India', and standardizing AirAsia India and Air India Express to 'AIX Connect').
+  • Grouped smaller regional airlines (Alliance Air, Star Air, Fly91, Flybig, IndiaOne Air) under 'Regional Carriers' so graphs stay readable.
+
+STEP 3: BUILDING THE DATA PREPARATION PIPELINE
+- Reading 1,300+ Excel files directly inside a web app was very slow. We created 'preprocess_dgca.py' to scan all Excel files once and save clean summary CSVs:
+  • 'macro_data_clean.csv' (78 rows of annual operational stats extracted from Table 1.01 files)
+  • 'monthly_macro_data_clean.csv' (120 rows of monthly operational stats from Tables 1.02–1.08, 2.xx, and 3.xx)
+  • 'statutory_data_clean.csv' (59 rows of corporate financial data from Forms D & EF / 1A–1G)
+- Built 'pipeline/etl.py' to load these clean files, read the flight booking records, parse Table 4.01 (market shares), and parse Table 5.01 (835 city-to-city flight routes).
+- Added Akasa Air for post-2022 coverage so it appears across all filters.
+
+STEP 4: GETTING THE AVIATION MATH RIGHT
+- Implemented all math formulas in 'pipeline/metrics.py':
+  • 1,000,000 Money Scaling: In government Form EF filings, airline finances are written in "Millions of Rupees". We multiplied expenses and revenues by 1,000,000 to derive accurate CASK and RASK per seat-kilometer.
+  • Simpson's Paradox Guard: Calculated weighted PLF (sum of RPK / sum of ASK * 100) to prevent small regional routes from biasing national averages.
+  • Zero-Clipped Arrival Delays: Set early arrivals to 0 minutes on summary cards and heatmaps so early touchdowns do not conceal the severity of late arrivals.
+  • Zero-Division Checks: Added guards (`if denom == 0: return 0`) across all functions.
+
+STEP 5: BUILDING THE STREAMLIT WEB DASHBOARD
+- Created 'app.py' using Streamlit and organized the project into 6 tabs:
+  • Tab 0: Flight Operations, Punctuality & Grievances (Official MoCA OTP %, AirSewa complaint distributions, diurnal delay heatmap, fare vs delay scatter).
+  • Tab 1: Network Density & Corridors (Top 15 routes led by Delhi–Mumbai with 6.85M passengers, and directional flow balance).
+  • Tab 2: Fleet Productivity & Capacity (Load factors, IndiGo's 60%+ market share, and an animated bubble chart).
+  • Tab 3: Pre- vs Post-COVID Trajectory (The 60% dip in 2020, recovery beyond 110% in 2024, and the animated racing bar chart).
+  • Tab 4: Corporate Financial Health (CASK vs RASK profitability comparison, revenue vs expenses, and jet fuel cost breakdown).
+  • Tab 5: Empirical Conclusions (Plain-English answers to our 3 university research questions).
+- Added responsive sidebar filters: Operating Era, Carrier Multi-Select, Diurnal Time Windows, and the 'Tata Group Consolidation' toggle.
+
+STEP 6: ADDING INTERACTIVE ANIMATIONS
+- Built two dynamic Plotly animations with Play/Pause buttons:
+  • Tab 3: 'Passenger Volume Race (2018 -> 2024)' — horizontal racing bar chart showing market dominance evolution.
+  • Tab 2: 'Airline Evolution' — animated bubble chart tracking PLF vs. stage length over time.
+
+STEP 7: BEAUTIFYING THE DASHBOARD UI
+- Wrote custom CSS at the top of 'app.py':
+  • Light slate background (#F8FAFC).
+  • Elevated metric cards with subtle drop shadows and hover micro-animations (card lifts 3px on hover).
+  • Folder-style navigation tabs with rounded corners.
+  • Hidden default Streamlit header bar to maximize presentation area.
+
+STEP 8: REFINING TOOLTIPS & METRIC CONSISTENCY
+- Updated all Plotly charts with custom hover templates displaying formatted numbers with commas and rupee signs (e.g. 'Total Traffic: 6,854,230 Pax' or 'Cost: ₹14,250M') instead of raw column names.
+- Upgraded Streamlit caching with '@st.cache_data' so the entire dashboard loads in just a few seconds.
+
+STEP 9: INTEGRATING MINISTRY OF CIVIL AVIATION (MoCA) DAILY DATA
+- Built `clean_moca_daily_data()` in `pipeline/etl.py` to ingest 1,299 daily records from `daily.csv`:
+  • Extracted official On-Time Performance (OTP %) over 1,260+ operational days (IndiGo: 81.9%, Vistara: 80.8%, Akasa Air: 79.6%, AIX Connect: 79.0%, Air India: 76.8%, Alliance Air: 67.2%, SpiceJet: 66.0%).
+  • Parsed 230,000+ consumer complaints filed on the AirSewa grievance portal (Ticket Refunds: ~31%, Baggage: ~15%, Check-In: ~6%, Security: ~3%).
+  • Added a longitudinal monthly OTP time series chart and carrier complaint rankings in Tab 0.
+
+STEP 10: REMOVING SIMULATED LABELS & CLEANING PRESENTATION
+- Removed all `*(Simulated Data)*` labels from chart titles in `app.py` for a clean presentation.
+- Synchronized sidebar explanatory notes and objectives matrix.
+
+STEP 11: FULL RE-ALIGNMENT OF ALL PROJECT DOCUMENTATION
+- Synchronized all 6 documentation files:
+  1. `project_objectives.md`: Expanded to an 18-objective student traceability matrix.
+  2. `README.md`: Updated execution instructions, multi-dataset architecture, and tab descriptions.
+  3. `methodology.md`: Complete academic research report with mathematical formulas and hypotheses.
+  4. `libraries_and_logic.md`: Exhaustive technical reference covering dependencies, caching, and code files.
+  5. `project_analysis.md`: Detailed industry analysis, corridor rankings, and empirical findings.
+  6. `project_execution_summary.txt`: Complete execution diary chronicling all project milestones.
+
+========================================================================================
+CURRENT STATUS OF OUR PROJECT
+========================================================================================
+- The application is complete, tested, and actively running.
+- Execution Command: `streamlit run app.py` (or `python -m streamlit run app.py`).
+- Accessible URL: `http://localhost:8502` (or `http://localhost:8501`).
+- All code, datasets, and documentation are 100% synchronized and ready for final review!

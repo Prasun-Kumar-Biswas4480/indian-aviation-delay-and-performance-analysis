@@ -1,0 +1,30 @@
+# Virtual environments
+venv/
+venv2/
+.venv/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Scratch / temp files
+scratch_*.csv
